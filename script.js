@@ -1,0 +1,24 @@
+document.documentElement.classList.add('js');
+document.querySelectorAll('.quiz').forEach(quiz=>{const buttons=[...quiz.querySelectorAll('[data-choice]')];buttons.forEach(button=>button.addEventListener('click',()=>{buttons.forEach(b=>b.setAttribute('aria-pressed',String(b===button)));quiz.querySelector('.feedback').textContent=button.dataset.choice===quiz.dataset.correct?quiz.dataset.answer:'Пока не угадали. Попробуй ещё раз: подсказка есть в истории.';}));});
+const dialog=document.querySelector('.lightbox');
+if(dialog&&typeof dialog.showModal==='function'){
+ let current=0,items=[],opener=null;const image=dialog.querySelector('img');
+ const render=()=>{const a=items[current];image.src=a.href;image.alt=a.querySelector('img').alt;dialog.querySelector('.lightbox-caption').textContent=a.dataset.caption;dialog.querySelector('.gallery-position').textContent=(current+1)+' / '+items.length;};
+ document.querySelectorAll('[data-gallery]').forEach(a=>a.addEventListener('click',event=>{event.preventDefault();opener=a;items=[...document.querySelectorAll('[data-gallery]')].filter(x=>!x.closest('figure').hidden);current=items.indexOf(a);render();dialog.showModal();}));
+ dialog.querySelector('.lightbox-close').addEventListener('click',()=>dialog.close());dialog.addEventListener('close',()=>opener?.focus());
+ const step=n=>{current=(current+n+items.length)%items.length;render();};
+ dialog.querySelectorAll('[data-direction]').forEach(b=>b.addEventListener('click',()=>step(Number(b.dataset.direction))));
+ dialog.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'){e.preventDefault();step(-1);}if(e.key==='ArrowRight'){e.preventDefault();step(1);}});
+ dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});
+}
+
+
+const stages=[
+ {title:'Кто-то совсем маленький',text:'У камня сидит птенец. Он потерялся и смотрит прямо на тебя. Как поступишь?',image:4,alt:'Перри встретил птенца в пустыне',options:['Подойти осторожно и помочь','Забрать ягоды и уйти'],correct:0,good:'Малыш больше не один. Теперь вы идёте вместе.',bad:'Птенцу нужна помощь. Попробуй найти для него более заботливое решение.'},
+ {title:'Через горячий песок',text:'Впереди открытое место. Птенец не успевает за тобой, а солнце припекает. Что сделаешь?',image:6,alt:'Перри среди горячего песка и камней',options:['Побегу вперёд один','Возьму малыша и найду тень'],correct:1,good:'Вместе вы добрались до тени. Можно немного передохнуть.',bad:'Если оставить малыша, путешествие перестанет быть общим. Попробуй другой вариант.'},
+ {title:'Когда небо хмурится',text:'Начался сильный дождь. Маленький попутчик дрожит от холода. Твой следующий шаг?',image:7,alt:'Перри укрывает птенца от дождя',options:['Спрячу птенца от дождя','Пусть привыкает к погоде'],correct:0,good:'Вы переждали непогоду вместе. Впереди уже слышен океан.',bad:'Малыш пока не может укрыться сам. Подумай, как ему помочь.'}
+];
+let stage=0,ready=false;const image=document.querySelector('#journey-image'),progress=document.querySelector('#journey-progress'),title=document.querySelector('#journey-title'),text=document.querySelector('#journey-text'),choices=document.querySelector('#journey-choices'),feedback=document.querySelector('#journey-feedback'),next=document.querySelector('#journey-next');
+function renderStage(){ready=false;const s=stages[stage];image.src='assets/photo-'+s.image+'.jpg';image.alt=s.alt;progress.textContent='Шаг '+(stage+1)+' из '+stages.length;title.textContent=s.title;text.textContent=s.text;feedback.textContent='Выбери действие, чтобы продолжить историю.';next.hidden=true;choices.replaceChildren();s.options.forEach((label,index)=>{const button=document.createElement('button');button.type='button';button.className='choice';button.textContent=label;button.setAttribute('aria-pressed','false');button.addEventListener('click',()=>{choices.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));ready=index===s.correct;feedback.textContent=ready?s.good:s.bad;next.hidden=!ready;});choices.append(button);});}
+next.addEventListener('click',()=>{if(!ready)return;stage++;if(stage<stages.length){renderStage();choices.querySelector('button').focus();}else{image.src='assets/photo-3.jpg';image.alt='Перри и птенец у океана';progress.textContent='Путешествие завершено';title.textContent='До океана. Вместе.';text.textContent='Три маленьких решения сделали большую разницу. В этом приключении забота оказалась сильнее страха.';feedback.textContent='Вы помогли друг другу дойти до конца.';choices.replaceChildren();next.hidden=true;document.querySelector('#journey-reset').focus();}});
+document.querySelector('#journey-reset').addEventListener('click',()=>{stage=0;renderStage();choices.querySelector('button').focus();});renderStage();
